@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivilegedAction;
 
 public class ControlEventReader {
 
@@ -85,8 +86,8 @@ public class ControlEventReader {
             return null;
         }
         int action = toUnsigned(buffer.get());
-        int keycode = buffer.getInt();
-        int metaState = buffer.getInt();
+        int keycode = getInt(buffer);
+        int metaState =getInt(buffer);
         return ControlEvent.createKeycodeControlEvent(action, keycode, metaState);
     }
 
@@ -94,7 +95,7 @@ public class ControlEventReader {
         if (buffer.remaining() < 1) {
             return null;
         }
-        int len = toUnsigned(buffer.getShort());
+        int len = getInt(buffer);
         if (buffer.remaining() < len) {
             return null;
         }
@@ -108,7 +109,7 @@ public class ControlEventReader {
             return null;
         }
         int action = toUnsigned(buffer.get());
-        int buttons = buffer.getInt();
+        int buttons = getInt(buffer);
         Position position = readPosition(buffer);
         return ControlEvent.createMotionControlEvent(action, buttons, position);
     }
@@ -118,8 +119,8 @@ public class ControlEventReader {
             return null;
         }
         Position position = readPosition(buffer);
-        int hScroll = buffer.getInt();
-        int vScroll = buffer.getInt();
+        int hScroll = getInt(buffer);
+        int vScroll = getInt(buffer);
         return ControlEvent.createScrollControlEvent(position, hScroll, vScroll);
     }
 
@@ -132,10 +133,10 @@ public class ControlEventReader {
     }
 
     private static Position readPosition(ByteBuffer buffer) {
-        int x = buffer.getInt();
-        int y = buffer.getInt();
-        int screenWidth = toUnsigned(buffer.getShort());
-        int screenHeight = toUnsigned(buffer.getShort());
+        int x = getInt(buffer);
+        int y = getInt(buffer);
+        int screenWidth = getInt(buffer);
+        int screenHeight =getInt(buffer);
         return new Position(x, y, screenWidth, screenHeight);
     }
 
@@ -147,5 +148,14 @@ public class ControlEventReader {
     @SuppressWarnings("checkstyle:MagicNumber")
     private static int toUnsigned(byte value) {
         return value & 0xff;
+    }
+
+    private static int getInt(ByteBuffer buffer) {
+        byte[] bytes = new byte[4];
+        bytes[0] = buffer.get();
+        bytes[1] = buffer.get();
+        bytes[2] = buffer.get();
+        bytes[3] = buffer.get();
+        return (bytes[0] & 0xff) << 24 | (bytes[1] & 0xff) << 16 | (bytes[2] & 0xff) << 8 | (bytes[3] & 0xff);
     }
 }
