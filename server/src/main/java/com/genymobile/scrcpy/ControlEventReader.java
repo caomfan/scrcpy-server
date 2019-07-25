@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivilegedAction;
 
@@ -18,7 +19,7 @@ public class ControlEventReader {
     private static final int RAW_BUFFER_SIZE = 1024;
 
     private final byte[] rawBuffer = new byte[RAW_BUFFER_SIZE];
-    private final ByteBuffer buffer = ByteBuffer.wrap(rawBuffer);
+    private final ByteBuffer buffer = ByteBuffer.wrap(rawBuffer).order(ByteOrder.LITTLE_ENDIAN);
     private final byte[] textBuffer = new byte[TEXT_MAX_LENGTH];
 
     public ControlEventReader() {
@@ -86,8 +87,8 @@ public class ControlEventReader {
             return null;
         }
         int action = toUnsigned(buffer.get());
-        int keycode = getInt(buffer);
-        int metaState =getInt(buffer);
+        int keycode = buffer.getInt();
+        int metaState =buffer.getInt();
         return ControlEvent.createKeycodeControlEvent(action, keycode, metaState);
     }
 
@@ -95,7 +96,7 @@ public class ControlEventReader {
         if (buffer.remaining() < 1) {
             return null;
         }
-        int len = getInt(buffer);
+        int len = buffer.getInt();
         if (buffer.remaining() < len) {
             return null;
         }
@@ -109,7 +110,7 @@ public class ControlEventReader {
             return null;
         }
         int action = toUnsigned(buffer.get());
-        int buttons = getInt(buffer);
+        int buttons = buffer.getInt();
         Position position = readPosition(buffer);
         return ControlEvent.createMotionControlEvent(action, buttons, position);
     }
@@ -119,8 +120,8 @@ public class ControlEventReader {
             return null;
         }
         Position position = readPosition(buffer);
-        int hScroll = getInt(buffer);
-        int vScroll = getInt(buffer);
+        int hScroll = buffer.getInt();
+        int vScroll = buffer.getInt();
         return ControlEvent.createScrollControlEvent(position, hScroll, vScroll);
     }
 
@@ -133,10 +134,10 @@ public class ControlEventReader {
     }
 
     private static Position readPosition(ByteBuffer buffer) {
-        int x = getInt(buffer);
-        int y = getInt(buffer);
-        int screenWidth = getInt(buffer);
-        int screenHeight =getInt(buffer);
+        int x = buffer.getInt();
+        int y = buffer.getInt();
+        int screenWidth = buffer.getInt();
+        int screenHeight =buffer.getInt();
         return new Position(x, y, screenWidth, screenHeight);
     }
 
